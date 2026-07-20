@@ -192,7 +192,7 @@ class Tree:
     """
     Tree's are the root of rendering, animations, and events in Mint (mintree!).
 
-    An element's units are all based on the tree's frame, and only 
+    An element's units are all based on the tree's frame, and only
     within the tree's viewport (or sub viewport) will be rendered.
 
     Tree's also hold the batch rendering objects for the various elements,
@@ -598,7 +598,7 @@ class Layout:
 class Content:
     """
     A Mint component that describes what should be drawn. When the Mint tree is
-    composed these use their owner element's size, location, and styling to 
+    composed these use their owner element's size, location, and styling to
     add themselves to the render pipeline. This is currently based on pyglet batches
     but will eventually be a hot-swappable sytstem.
     """
@@ -870,7 +870,7 @@ class Array(Element[ArrayElement]):
         size = child_size + padding + spacing
 
         if y_axis:
-            self.height = min(data.maximum_height, min(data.minimum_height, size))
+            self.height = min(data.maximum_height, max(data.minimum_height, size))
             return self.height
         self.width = min(data.maximum_width, max(data.minimum_width, size))
         return self.width
@@ -1083,7 +1083,7 @@ class AnchorElement(ElementData):
     top_offset: float = 0.0
 
 class Anchor(Element[AnchorElement]):
-    
+
     def layout_horizontal(self) -> float:
         data = self._data
         padding_width = data.padding.left + data.padding.right
