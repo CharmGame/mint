@@ -8,7 +8,7 @@ from enum import IntEnum
 
 # | -- UTIL -- |
 
-__EPSILON = float_info.epsilon
+_EPSILON = float_info.epsilon
 
 @dataclass(slots=True)
 class Vector2:
@@ -86,7 +86,6 @@ class Fit:
 class Grow:
     min: float = 0.0
     max: float = float("inf")
-    fraction: float = 1.0
 
 @dataclass(slots=True)
 class Sizing:
@@ -218,25 +217,136 @@ class Array(Layout):
                     min_dim.height = max(dim.height, child.min_dimensions.height + vertical_padding)
 
     def __on_adjust_width__(self, element: TreeElement):
+        if not element.children:
+            return
+
         if self.vertical:
             self._adjust_off_axis(element)
         else:
             self._adjust_on_axis(element)
 
     def __on_adjust_height__(self, element: TreeElement):
+        if not element.children:
+            return
+
         if self.vertical:
             self._adjust_on_axis(element)
         else:
             self._adjust_off_axis(element)
 
     def _adjust_on_axis(self, element: TreeElement):
-        remaining_size = 0
+        children = element.children
+        content_size = 0
+        grow_children = 0
+        # Compute remaining size, and the largest and smallest elements
+        # If the remaining size is positive then grow all the grow elements to fit
+        # If the remaining size is negative then shrink all of the elements to fit
+        content_size += (len(children) - 1) * self.gutter
+        growing = []
+        shrinking = []
+        for child in children:
+            size = child.dimensions.height if self.vertical else child.dimensions.width
+            sizing = child.declaration.sizing.height if self.vertical else child.declaration.sizing.width
+            content_size += size
+            if isinstance(sizing, Grow):
+                growing.append(child)
+                shrinking.append(child)
+            elif not isinstance(sizing, Fixed):
+                shrinking.append(child)
 
-        while remaining_size > __EPSILON:
-            pass
+        if self.vertical:
+            parent_size = element.dimensions.height - element.declaration.padding.bottom - element.declaration.padding.top
+            clip = element.declaration.clip.vertical
+        else:
+            parent_size = element.dimensions.width - element.declaration.padding.left - element.declaration.padding.right
+            clip = element.declaration.clip.horizontal
+        remaining_size = parent_size - content_size
 
-        while remaining_size < -__EPSILON:
-            pass
+        if remaining_size < 0:
+            # Element doesn't have enough size for its children
+            if clip: # The children are too large, but the element is clippings so we don't care
+                return
+            size_to_add = remaining_size
+            while remaining_size < -_EPSILON and shrinking:
+                # Find the two lagest elements of difference sizes and their difference
+                largest = second = 0
+                for child in shrinking:
+                    size = child.dimensions.height if self.vertical else child.dimensions.width
+                    if largest < size:
+                        second = largest
+                        largest = size
+                        size_to_add = second - largest
+                    elif size < largest:
+                        second = max(second, size)
+                        size_to_add = second - largest
+
+                # Find the actual amount of size that can be taken from the largest elements
+                # And what the new size of those elements will be
+                size_to_add = max(size_to_add, remaining_size / len(shrinking))
+                next_size = largest + size_to_add # size_to_add is negative
+
+                for child in shrinking[:]:
+                    dim = child.dimensions
+                    size = dim.height if self.vertical else dim.width
+                    sizing = child.declaration.sizing.height if self.vertical else child.declaration.sizing.width
+                    min_size = sizing.min
+                    if size == largest:
+                        if self.vertical:
+                            if next_size < min_size:
+                                shrinking.remove(child)
+                                dim.height = min_size
+                            else:
+                                dim.height = next_size
+                            remaining_size += (size - dim.height)
+                        else:
+                            if max_size < next_size:
+                                growing.remove(child)
+                                dim.width = max_size
+                            else:
+                                dim.width = next_size
+                            remaining_size += (size - dim.width)
+        elif remaining_size > 0 and growing:
+            # Element has more than enough size for its children, and they want to grow
+            size_to_add = remaining_size
+            while growing and remaining_size > _EPSILON:
+                # Find the two smallest elements of different sizes and their difference
+                smallest = second = float('inf')
+                for child in growing:
+                    size = child.dimensions.height if self.vertical else child.dimensions.width
+                    if size < smallest:
+                        second = smallest
+                        smallest = size
+                        size_to_add = second - smallest
+                    elif smallest < size:
+                        second = min(second, size)
+                        size_to_add = second - smallest
+                # Find the actual amount of size that can be given to the smallest elements
+                # And what the new size of those elements will be
+                size_to_add = min(size_to_add, remaining_size / len(growing))
+                next_size = smallest + size_to_add
+
+                # Increase the smallest elements to the next smallest size, but clamp by their max
+                # Once an element reaches it's max size any extra size can go to other elements
+                for child in growing[:]:
+                    dim = child.dimensions
+                    size = dim.height if self.vertical else dim.width
+                    sizing = child.declaration.sizing.height if self.vertical else child.declaration.sizing.width
+                    max_size = sizing.max
+                    if size == smallest:
+                        if self.vertical:
+                            if max_size < next_size:
+                                growing.remove(child)
+                                dim.height = max_size
+                            else:
+                                dim.height = next_size
+                            remaining_size -= (dim.height - size)
+                        else:
+                            if max_size < next_size:
+                                growing.remove(child)
+                                dim.width = max_size
+                            else:
+                                dim.width = next_size
+                            remaining_size -= (dim.width - size)
 
     def _adjust_off_axis(self, element: TreeElement):
         children = element.children

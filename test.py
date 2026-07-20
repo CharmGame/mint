@@ -8,8 +8,8 @@ def button(text: str, on_click = None):
         yield mint.Element(content=mint.Text(text), sizing=mint.Sizing(mint.Fixed(100), mint.Fixed(20)))
 
 def compose():
-    with mint.Element(layout=mint.Array(gutter=50.0), padding=mint.Padding(30.0, 30.0, 30.0, 30.0), sizing=mint.Sizing(mint.Fit(), mint.Grow())):
-        yield mint.Element(id="childless", sizing=mint.Sizing(mint.Fixed(50), mint.Grow()))
+    with mint.Element(layout=mint.Array(gutter=50.0, x = mint.Alignment.CENTER), padding=mint.Padding(30.0, 30.0, 30.0, 30.0), sizing=mint.Sizing(mint.Grow(), mint.Grow())):
+        yield mint.Element(id="childless", sizing=mint.Sizing(mint.Grow(), mint.Grow()))
         with mint.Element(layout=mint.Array(vertical=True, gutter=20.0), padding=mint.Padding(5.0, 5.0, 5.0, 5.0)):
             yield from button("play")
             yield from button("settings")
