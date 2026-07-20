@@ -230,7 +230,13 @@ class Array(Layout):
             self._adjust_off_axis(element)
 
     def _adjust_on_axis(self, element: TreeElement):
-        pass
+        remaining_size = 0
+
+        while remaining_size > __EPSILON:
+            pass
+
+        while remaining_size < -__EPSILON:
+            pass
 
     def _adjust_off_axis(self, element: TreeElement):
         children = element.children
