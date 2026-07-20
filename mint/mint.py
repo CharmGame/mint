@@ -285,6 +285,8 @@ class Array(Layout):
                 size_to_add = max(size_to_add, remaining_size / len(shrinking))
                 next_size = largest + size_to_add # size_to_add is negative
 
+                # Shrink the largest elements to the second largest size, but clamp by their minimum
+                # Once an element reaches its minimum size remove it from the calculations
                 for child in shrinking[:]:
                     dim = child.dimensions
                     size = dim.height if self.vertical else dim.width
@@ -299,9 +301,9 @@ class Array(Layout):
                                 dim.height = next_size
                             remaining_size += (size - dim.height)
                         else:
-                            if max_size < next_size:
-                                growing.remove(child)
-                                dim.width = max_size
+                            if next_size < min_size:
+                                shrinking.remove(child)
+                                dim.width = min_size
                             else:
                                 dim.width = next_size
                             remaining_size += (size - dim.width)
@@ -584,9 +586,6 @@ class Tree:
         self._open_elements: list[TreeElement] = []
 
         self._render_commands: list = []
-
-        # TODO: check if needed: render some vertical text and see if normal layouting works
-        self._vertical_wrap_direction: bool = False
 
         self.set_active_tree()
 

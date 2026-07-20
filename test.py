@@ -9,11 +9,11 @@ def button(text: str, on_click = None):
 
 def compose():
     with mint.Element(layout=mint.Array(gutter=50.0, x = mint.Alignment.CENTER), padding=mint.Padding(30.0, 30.0, 30.0, 30.0), sizing=mint.Sizing(mint.Grow(), mint.Grow())):
-        yield mint.Element(id="childless", sizing=mint.Sizing(mint.Grow(), mint.Grow()))
-        with mint.Element(layout=mint.Array(vertical=True, gutter=20.0), padding=mint.Padding(5.0, 5.0, 5.0, 5.0)):
+        with mint.Element(layout=mint.Array(vertical=True, gutter=20.0, y=mint.Alignment.TOP), padding=mint.Padding(5.0, 5.0, 5.0, 5.0), sizing=mint.Sizing(height=mint.Grow())):
             yield from button("play")
             yield from button("settings")
             yield from button("exit")
+        yield mint.Element(id="childless", sizing=mint.Sizing(mint.Grow(), mint.Grow()))
 
 # TODO: for dx make that not have to be a dimension (Sequence?)
 tree = mint.Tree((1280, 720))
@@ -23,18 +23,17 @@ for element in tree._element_map.values():
     print(element.id)
 tree.print_tree()
 
-commands = tree._render_commands
 
-window = arcade.Window()
+window = arcade.Window(resizable=True, draw_rate=1/10000, update_rate=1/10000)
 
 colors: dict[str, arcade.types.RGBA255] = {
     "__MintRoot__rect__": (0, 0, 0, 0)
 }
 
-print("\n".join(str(c) for c in commands))
-
 def on_draw():
-    window.clear
+    tree.compose(compose)
+    commands = tree._render_commands
+    window.clear()
     for command in commands:
         match command:
             case mint.RenderTextCommand():
@@ -45,6 +44,14 @@ def on_draw():
                 color = colors[command.id]
                 arcade.draw_lbwh_rectangle_filled(command.region.left, command.region.bottom, command.region.width, command.region.height, color)
 
+def on_resize(width, height):
+    tree._frame = mint.Dimension(width, height)
+
+def on_update(delta_time):
+    print(1/delta_time)
+
 window.on_draw = on_draw
+window.on_resize = on_resize
+window.on_update = on_update
 
 window.run()
