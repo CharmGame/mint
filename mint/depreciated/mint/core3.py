@@ -66,7 +66,9 @@ class AxisAnchor(Enum):
 
 # TODO: Rename
 class FrameFit(Enum):
-    FIXED = 0  # The Frame will not change size even if the viewport grows in size. (I.E. no Zooming)
+    FIXED = (
+        0  # The Frame will not change size even if the viewport grows in size. (I.E. no Zooming)
+    )
     STRETCH = 1  # The Frame will always fit on the vertical and horizontal even if units stop being square
     WIDTH = 2  # Fits so that the frame width matches the viewport irrespective of height
     HEIGHT = 3  # Fits so tha the frame height matches the viewport irrespective of width
@@ -103,17 +105,13 @@ class BuiltInAxis(StrEnum):
 
 
 class MintEvent:
-
     def __init__(self, *, time: float, name: str | None = None) -> None:
         self._time: float = time
         self._name: str = name or self.__class__.__name__
 
 
 class CursorMotionEvent(MintEvent):
-
-    def __init__(
-        self, x: float, y: float, dx: float, dy: float, *, time: float
-    ) -> None:
+    def __init__(self, x: float, y: float, dx: float, dy: float, *, time: float) -> None:
         MintEvent.__init__(self, time=time, name=BuiltInEvents.CURSOR_MOTION)
         self.x: float = x
         self.y: float = y
@@ -122,7 +120,6 @@ class CursorMotionEvent(MintEvent):
 
 
 class CursorClickEvent(MintEvent):
-
     def __init__(self, x: float, y: float, action: str, pressed: bool, *, time: float):
         super().__init__(time=time, name=BuiltInEvents.CURSOR_CLICK)
         self.x: float = x
@@ -142,7 +139,6 @@ class CursorDragEvent(MintEvent):
 
 
 class ActionInputEvent(MintEvent):
-
     def __init__(self, action: str, pressed: bool, *, time: float) -> None:
         MintEvent.__init__(self, time=time, name=BuiltInEvents.ACTION_INPUT)
         self.action: str = action
@@ -150,7 +146,6 @@ class ActionInputEvent(MintEvent):
 
 
 class AxisChangeEvent(MintEvent):  # TODO: N dimension axis
-
     def __init__(self, axis: str, v: float, dv: float, *, time: float) -> None:
         MintEvent.__init__(self, time=time, name=BuiltInEvents.AXIS_CHANGE)
         self.axis: str = axis
@@ -159,7 +154,6 @@ class AxisChangeEvent(MintEvent):  # TODO: N dimension axis
 
 
 class Frame:
-
     def __init__(self, width: int, height: int) -> None:
         self.width = width
         self.height = height
@@ -169,22 +163,26 @@ class Frame:
 class Tree:
     pass
 
+
 class Layout:
     pass
+
 
 class Content:
     pass
 
+
 class Element[L: Layout, C: Content]:
-    
-    def __init__(self, layout: L, content: C, parent: Element | None = None, uid: UUID | None = None) -> None:
-        # The unique id that may last beyond the creation and destruction of multiple layout trees 
+    def __init__(
+        self, layout: L, content: C, parent: Element | None = None, uid: UUID | None = None
+    ) -> None:
+        # The unique id that may last beyond the creation and destruction of multiple layout trees
         self.uid: UUID = uid if uid is not None else uuid4()
 
         # The layout functionality of the element. Including how it will layout its children
         self._layout: L = layout
 
-        # The renderable content of the element. 
+        # The renderable content of the element.
         self._content: C = content
 
         # The bounds of a child element.
